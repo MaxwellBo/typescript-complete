@@ -3,14 +3,18 @@
  */
 
 // #############################################################################
+// PRIMATIVES
 
 let _true: true = true
 let _false: false = false
 let _0: 0 = 0
 let _literal: 'literal' = 'literal'
 
-let _never: never // empty set, ⊥
-let _any: any // set of everything, ⊤
+type Top = {} // ⊤ 
+type Bottom = never // ⊥
+
+let TOP: Top
+let BOTTOM: Bottom
 
 //         { true } ∪ { false }
 let _trueFalse: true | false = true
@@ -21,6 +25,9 @@ let _trueFalse: true | false = true
 let _boolean: boolean = _true
 _boolean = _trueFalse 
 _boolean = _0 // does not typecheck
+
+// #############################################################################
+// SUBSET
 
 // extends is equivalent to the ⊂ operator
 const _1In1And2: 1 extends (1 | 2) ? true : false = true
@@ -78,31 +85,8 @@ const _stringIsSubsetOfAsdf: Subset<'asdf', string> = true
 const _asdfListIsSubsetOfStringList: Subset<'asdf'[], string[]> = true
 const _stringListIsSubsetOfAsdfList: Subset<string[], 'asdf'[]> = false
 
-type T12 = 1 | 2
-type T23 =     2 | 3
-
-type T2 = T12 & T23
-
-
-type TAny = 1 | any
-type T1 = 1 | never
-
-type TAnyAsWell = 1 & any // WTF?, this is `any`, not `1`
-type TNever = 1 & never
-
-
-// { true }
-let _testTrueTrueIntersection: true & true = true
-_testTrueIntersection = false // doesn't typecheck
-
-
-// {}
-let _testTrueFalseIntersection: true & false = _never
-_testTrueFalseIntersection = true // doesn't typecheck
-_testTrueFalseIntersection = false // doesn't typecheck
-
-const _isTrueIntersection: true extends true & true ? true : false = true
-const _isFalseIntersection: true extends true & false ? true : false = false
+// #############################################################################
+// BOOLOPS
 
 type And<A, B> = true extends A & B ? true : false
 
@@ -114,8 +98,33 @@ const _testFT: And<false, true> = false
 // type Equal<A, B> = true extends ([A] extends [B] ? true : false) & ([B] extends [A] ? true : false) ? true : false
 type Equal<A, B> = And<Subset<A, B>, Subset<B, A>>
 
-const _testBooleanEquality: Equal<boolean, true | false> = true
-const _testIntersectionInequality: Equal<1 | 2, 2 | 3> = false
+type T12 = 1 | 2
+type T23 =     2 | 3
+
+type T2 = T12 & T23
+
+// https://github.com/Microsoft/TypeScript/issues/9999 here be dragons, `any` is both ⊥ and ⊤, `{}` is the true ⊤ type
+
+let _topUnion: Equal<1 | Top, Top> = true
+let _bottomUnion: Equal<1 | Bottom, 1> = true 
+
+let _topIntersection: Equal<1 & Top, 1> = true
+let _bottomIntersection: Equal<1 & Bottom, Bottom> = true
+
+// // { true }
+// let _testTrueTrueIntersection: true & true = true
+// _testTrueIntersection = false // doesn't typecheck
+
+
+// let _testTrueFalseIntersection: true & false = BOTTOM
+// _testTrueFalseIntersection = true // doesn't typecheck
+// _testTrueFalseIntersection = false // doesn't typecheck
+
+// const _isTrueIntersection: true extends true & true ? true : false = true
+// const _isFalseIntersection: true extends true & false ? true : false = false
+
+// const _testBooleanEquality: Equal<boolean, true | false> = true
+// const _testIntersectionInequality: Equal<1 | 2, 2 | 3> = false
 
 // #############################################################################
 // Interfaces are equivalent to type functions

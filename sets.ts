@@ -10,6 +10,7 @@ let _false: false = false
 let _0: 0 = 0
 let _literal: 'literal' = 'literal'
 
+// In languages with a structural type system, the top type is the empty structure. 
 type Top = {} // ⊤ 
 type Bottom = never // ⊥
 

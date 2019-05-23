@@ -68,7 +68,7 @@ type Subset<A, B> = [A] extends [B] ? true : false
 // So we wrap our type arguments in lists so that they aren't "naked", because only _naked_ types are distrubted.
 
 let _23IsSubsetOf3: Subset<2 | 3, 3> = false
-_23IsSubsetOf3 = false // doesn't typecheck. As you can see, it now works!
+_23IsSubsetOf3 = true // doesn't typecheck. As you can see, it now works!
 
 const _23IsSubsetOf123: Subset<2 | 3, 1 | 2 | 3> = true
 

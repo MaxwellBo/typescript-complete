@@ -25,10 +25,15 @@ _boolean = _0 // does not typecheck
 // extends is equivalent to the ⊂ operator
 const _1In1And2: 1 extends (1 | 2) ? true : false = true
 const _1In2:     1 extends (2)     ? true : false = false
-// or is it?
-// Subset<2 | 3, 3> is `boolean`
 
-// That's because of "Distributive Conditional Types"
+type BadSubset<A, B> = A extends B ? true : false
+
+const _23IsSubsetOf3Bad: BadSubset<2 | 3, 3> = true 
+const _23IsSubsetOf3AlsoBad: BadSubset<2 | 3, 3> = false
+// wat
+//  BadSubset<2 | 3, 3> is boolean!?
+
+// This is because of "Distributive Conditional Types"
 
 // Conditional types in which the checked type is a naked type parameter are called distributive conditional types. 
 // Distributive conditional types are automatically distributed over union types during instantiation.
@@ -58,15 +63,14 @@ type TestTypeNameStringOrObjectOrUndefined = TypeName<string | string[] | undefi
 type TestTypeNameObject2 = TypeName<string[] | number[]>;  // "object"
 
 
-// So type Subset<A, B> = A extends B ? true : false
-// would cause `Subset<2 | 3, 3>` to resolve to `boolean`, because while 2 is not assignable to 3, 3 is, hence `true | false` aka `boolean`
+// So `Subset<2 | 3, 3>` resolves to `boolean`, because while 2 is not assignable to 3, 3 is, hence `true | false` aka `boolean`
 
-// So we wrap our type arguments in lists so that they aren't "naked", because only _naked_ types are distrubted.
+
 type Subset<A, B> = [A] extends [B] ? true : false
+// So we wrap our type arguments in lists so that they aren't "naked", because only _naked_ types are distrubted.
 
+const _23IsSubsetOf3: Subset<2 | 3, 3> = false // as you can see, it now works!
 const _23IsSubsetOf123: Subset<2 | 3, 1 | 2 | 3> = true
-const _23IsSubsetOf1: Subset<2 | 3, 1> = false
-const _23IsSubsetOf2: Subset<2 | 3, 2> = false
 
 const _asdfIfSubsetOfString: Subset<string, 'asdf'> = false
 const _stringIsSubsetOfAsdf: Subset<'asdf', string> = true

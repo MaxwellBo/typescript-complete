@@ -22,18 +22,48 @@ let _boolean: boolean = _true
 _boolean = _trueFalse 
 _boolean = _0 // does not typecheck
 
-// extends is equivalent to the subset operator
+// extends is equivalent to the ⊂ operator
 const _1In1And2: 1 extends (1 | 2) ? true : false = true
-const _2In1:     1 extends (2)     ? true : false = false
+const _1In2:     1 extends (2)     ? true : false = false
+// or is it?
+// Subset<2 | 3, 3> is `boolean`
 
-type Subset<A, B> = [A] extends [B] ? true : false
-// what's with the [A] and [B]?
+// That's because of "Distributive Conditional Types"
+
+// Conditional types in which the checked type is a naked type parameter are called distributive conditional types. 
+// Distributive conditional types are automatically distributed over union types during instantiation.
 
 // `T extends U ? X : Y` with the type argument `A | B | C` for `T` is resolved as 
 // `(A extends U ? X : Y) | (B extends U ? X : Y) | (C extends U ? X : Y)`
+// See as follows
 
-// type Subset<A, B> = A extends B ? true : false
+type TypeName<T> =
+    T extends string ? "string" :
+    T extends number ? "number" :
+    T extends boolean ? "boolean" :
+    T extends undefined ? "undefined" :
+    T extends Function ? "function" :
+    "object";
+
+type TestTypeNameString   = TypeName<string>;  // "string"
+type TestTypeNameA        = TypeName<"a">;  // "string"
+type TestTypeNameBoolean  = TypeName<true>;  // "boolean"
+type TestTypeNameFunction = TypeName<() => void>;  // "function"
+type TestTypeNameObject   = TypeName<string[]>;  // "object"
+
+
+// Here's where `TypeName` gets distributed over the union:
+type TestTypeNameStringOrFunction = TypeName<string | (() => void)>;  // "string" | "function"
+type TestTypeNameStringOrObjectOrUndefined = TypeName<string | string[] | undefined>;  // "string" | "object" | "undefined"
+type TestTypeNameObject2 = TypeName<string[] | number[]>;  // "object"
+
+
+// So type Subset<A, B> = A extends B ? true : false
 // would cause `Subset<2 | 3, 3>` to resolve to `boolean`, because while 2 is not assignable to 3, 3 is, hence `true | false` aka `boolean`
+
+// So we wrap our type arguments in lists so that they aren't "naked", because only _naked_ types are distrubted.
+type Subset<A, B> = [A] extends [B] ? true : false
+
 const _23IsSubsetOf123: Subset<2 | 3, 1 | 2 | 3> = true
 const _23IsSubsetOf1: Subset<2 | 3, 1> = false
 const _23IsSubsetOf2: Subset<2 | 3, 2> = false

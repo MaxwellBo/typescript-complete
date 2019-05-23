@@ -56,15 +56,13 @@ type TestTypeNameBoolean  = TypeName<true>;  // "boolean"
 type TestTypeNameFunction = TypeName<() => void>;  // "function"
 type TestTypeNameObject   = TypeName<string[]>;  // "object"
 
-
 // Here's where `TypeName` gets distributed over the union:
 type TestTypeNameStringOrFunction = TypeName<string | (() => void)>;  // "string" | "function"
 type TestTypeNameStringOrObjectOrUndefined = TypeName<string | string[] | undefined>;  // "string" | "object" | "undefined"
 type TestTypeNameObject2 = TypeName<string[] | number[]>;  // "object"
 
-
-// So `Subset<2 | 3, 3>` resolves to `boolean`, because while 2 is not assignable to 3, 3 is, hence `true | false` aka `boolean`
-
+// So `Subset<2 | 3, 3>` resolves to `boolean`, 
+// because while 2 is not assignable to 3, 3 is assignable to 3, hence `false | true` aka `boolean`
 
 type Subset<A, B> = [A] extends [B] ? true : false
 // So we wrap our type arguments in lists so that they aren't "naked", because only _naked_ types are distrubted.

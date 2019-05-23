@@ -107,7 +107,7 @@ const _testTF: And<true, false> = false
 const _testFF: And<false, false> = false
 const _testFT: And<false, true> = false
 
-// type Equals<A, B> = true extends (A extends B ? true : false) & (B extends A ? true : false) ? true : false
+// type Equal<A, B> = true extends ([A] extends [B] ? true : false) & ([B] extends [A] ? true : false) ? true : false
 type Equal<A, B> = And<Subset<A, B>, Subset<B, A>>
 
 const _testBooleanEquality: Equal<boolean, true | false> = true

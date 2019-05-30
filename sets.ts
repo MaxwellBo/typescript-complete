@@ -44,6 +44,7 @@ contains<BadSubset<2 | 3, 3>>(false)
 // `(A extends U ? X : Y) | (B extends U ? X : Y) | (C extends U ? X : Y)`
 // See as follows
 
+// https://www.typescriptlang.org/docs/handbook/advanced-types.html
 type TypeName<T> =
     T extends string ? "string" :
     T extends number ? "number" :
@@ -94,10 +95,10 @@ const _testFT: And<false, true> = false
 // type Equal<A, B> = true extends ([A] extends [B] ? true : false) & ([B] extends [A] ? true : false) ? true : false
 type Equal<A, B> = And<Subset<A, B>, Subset<B, A>>
 
-type T12 = 1 | 2
-type T23 =     2 | 3
+// type T12 = 1 | 2
+// type T23 =     2 | 3
 
-type T2 = T12 & T23
+// type T2 = T12 & T23
 
 // https://github.com/Microsoft/TypeScript/issues/9999 here be dragons, `any` is both ⊥ and ⊤, `{}` is the true ⊤ type
 
@@ -175,34 +176,98 @@ interface Decr {
 }
 
 
- // https://stackoverflow.com/questions/51687208/how-can-i-do-compile-time-addition-in-typescript
- // https://gist.github.com/utatti/c411d0939094ba490ce6dd78c92ffe4c
 
 
- type Nat = 0 | { succ: Nat };
+// https://www.typescriptlang.org/docs/handbook/advanced-types.html
+type Unpacked<T> =
+    T extends (infer U)[] ? U :
+    T extends (...args: any[]) => infer U ? U :
+    T extends Promise<infer U> ? U :
+    T;
 
-type Succ<T extends Nat> = { succ: T };
+type T0 = Unpacked<string>;  // string
+type T1 = Unpacked<string[]>;  // string
+type T2 = Unpacked<() => string>;  // string
+type T3 = Unpacked<Promise<string>>;  // string
+type T4 = Unpacked<Promise<string>[]>;  // Promise<string>
+type T5 = Unpacked<Unpacked<Promise<string>[]>>;  // string
 
-type N0  = 0;
-type N1  = Succ<N0>;
-type N2  = Succ<N1>;
-type N3  = Succ<N2>;
-type N4  = Succ<N3>;
-type N5  = Succ<N4>;
-type N6  = Succ<N5>;
-type N7  = Succ<N6>;
-type N8  = Succ<N7>;
-type N9  = Succ<N8>;
-type N10 = Succ<N9>;
+// https://wiki.haskell.org/Peano_numbers
+type Z = 0
+type S<T extends Nat> = { S: T };
+// aka Succ
 
-// type-level add operation
-type Add<X extends Nat, Y extends Nat> =
-    X extends Succ<infer R> ? { succ: Add<R, Y> } : Y;
+type Nat = Z | { S: Nat };
+//             ^ we can't write S<Nat> here because it would be a circulkar reference :(
 
-// type-level assertion
-type Assert<X extends Nat, Y extends Nat> = X extends Y ? any : never;
+type N1  = S<Z>;
+type N2  = S<N1>;
+type N3  = S<N2>;
+type N4  = S<N3>;
+type N5  = S<N4>;
+type N6  = S<N5>;
+type N7  = S<N6>;
+type N8  = S<N7>;
+type N9  = S<N8>;
+type N10 = S<N9>;
 
-// test
-assert<Equal<Add<N4, N5>, N9>>();
-assert<Equal<Add<N1, N3>, N4>>();
-assert<Equal<Add<N1, N3>, N5>>();
+
+// http://docs.idris-lang.org/en/latest/proofs/pluscomm.html#running-example-addition-of-natural-numbers
+/**
+ * plus : Nat -> Nat -> Nat
+ * plus (S k) m = S (plus k m)
+ * plus Z     m = m
+*/
+type Plus<X extends Nat, M extends Nat> =
+    X extends S<infer K> 
+        ? { S: Plus<K, M> } // recursive backreference in interface type, to subver the fact we can't do S<Plus<K, M>> 
+        : M;
+// For more information about the backreference hack https://github.com/Microsoft/TypeScript/issues/3496#issuecomment-128553540`
+
+assert<Equal<Plus<N4, N5>, N9>>();
+assert<Equal<Plus<N1, N3>, N4>>();
+assert<Equal<Plus<N1, N3>, N5>>(); // doesn't typecheck
+
+const z: Z = 0;
+function s<T extends Nat>(n: T): S<T> {
+    return { S: n };
+}
+
+function isSucc(pet: Nat): pet is S<Nat> {
+    return pet !== 0;
+}
+
+
+function plus<X extends Nat, M extends Nat>(x: X, m: M): Plus<X, M> {
+    if (isSucc(x)) {
+        const k = x.S; // k := x - 1
+
+        // hmmm :/
+        return s(plus(k, m)); 
+    }
+
+    return m;
+}
+
+// class Apply s t u | s t -> u
+// instance (Subst s t u, Eval u u') => Apply (Lam s) t u'
+
+// class Eval t u | t -> u
+// instance Eval X X
+// instance Eval (Lam t) (Lam t)
+// instance (Eval s s', Apply s' t u) => Eval (App s t) u
+
+// data X
+// data App t u
+// data Lam t
+type X = 'X'
+type App<T, U> = { t: T, u: U }
+type Lam<T> = { t: T }
+
+// class Subst s t u | s t -> u
+// instance Subst X u u
+// instance (Subst s u s', Subst t u t') => Subst (App s t) u (App s' t')
+// instance Subst (Lam t) u (Lam t)
+type Subst<S, T> =  
+    S extends X ? T :
+    S extends Subst<infer SP, infer TP>

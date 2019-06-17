@@ -1,3 +1,6 @@
+///////////////////////////////////////////////////////////////////////////////
+// HELPERS
+///////////////////////////////////////////////////////////////////////////////
 function contains<T>(x: T): void {
 }
 
@@ -5,6 +8,16 @@ contains<true>(true)
 contains<false>(false)
 contains<0>(0)
 contains<'literal'>('literal')
+
+///////////////////////////////////////////////////////////////////////////////
+
+function assert<T extends true>(): void {
+}
+
+assert<true>()
+assert<false>() // won't typecheck
+
+///////////////////////////////////////////////////////////////////////////////
 
 // In languages with a structural type system, the top type is the empty structure. 
 type Top = {} // ⊤ 
@@ -18,15 +31,13 @@ contains<Top>('literally everything')
 contains<Bottom>(null) 
 contains<Bottom>(undefined)
 
-// #############################################################################
-// SUBSET
+///////////////////////////////////////////////////////////////////////////////
+// SET OPERATIONS
+///////////////////////////////////////////////////////////////////////////////
 
 // extends is equivalent to the ⊂ operator
-const _1In1And2: 1 extends (1 | 2) ? true : false = true
-const _1In2:     1 extends (2)     ? true : false = false
-
-function assert<T extends true>(): void {
-}
+assert<1 extends (1 | 2) ? true : false>();
+assert<1 extends (2) ? true : false>();
 
 type BadSubset<A, B> = A extends B ? true : false
 
@@ -81,16 +92,17 @@ const _stringIsSubsetOfAsdf: Subset<'asdf', string> = true
 const _asdfListIsSubsetOfStringList: Subset<'asdf'[], string[]> = true
 const _stringListIsSubsetOfAsdfList: Subset<string[], 'asdf'[]> = false
 
-// #############################################################################
-// BOOLOPS
+///////////////////////////////////////////////////////////////////////////////
+// BOOLEANS
+///////////////////////////////////////////////////////////////////////////////
 
 type And<A, B> = true extends A & B ? true : false
 type Or<A, B> = true extends A | B ? true : false
 
-const _testTT: And<true, true> = true
-const _testTF: And<true, false> = false
-const _testFF: And<false, false> = false
-const _testFT: And<false, true> = false
+contains<And<true, true>>(true)
+contains<And<true, false>>(false)
+contains<And<false, true>>(false)
+contains<And<false, false>>(false)
 
 // type Equal<A, B> = true extends ([A] extends [B] ? true : false) & ([B] extends [A] ? true : false) ? true : false
 type Equal<A, B> = And<Subset<A, B>, Subset<B, A>>
@@ -102,11 +114,11 @@ type Equal<A, B> = And<Subset<A, B>, Subset<B, A>>
 
 // https://github.com/Microsoft/TypeScript/issues/9999 here be dragons, `any` is both ⊥ and ⊤, `{}` is the true ⊤ type
 
-let _topUnion: Equal<1 | Top, Top> = true
-let _bottomUnion: Equal<1 | Bottom, 1> = true 
+assert<Equal<1 | Top, Top>>()
+assert<Equal<1 | Bottom, 1>>() 
 
-let _topIntersection: Equal<1 & Top, 1> = true
-let _bottomIntersection: Equal<1 & Bottom, Bottom> = true
+assert<Equal<1 & Top, 1>>()
+assert<Equal<1 & Bottom, Bottom>>()
 
 // // { true }
 // let _testTrueTrueIntersection: true & true = true
@@ -160,12 +172,7 @@ const _zeroNumber: NumberCodec['zero'] = 0
 const _roundtrip:  NumberCodec[NumberCodec['zero']] = 'zero'
 
 
-interface Incr {
-    0: 1,
-    1: 2,
-    2: 3,
-    3: 4
-}
+
 
 interface Decr {
     5: 4,
@@ -211,6 +218,13 @@ type N8  = S<N7>;
 type N9  = S<N8>;
 type N10 = S<N9>;
 
+interface Incr {
+    0: 1,
+    1: 2,
+    2: 3,
+    3: 4,
+    4: 5
+}
 
 // http://docs.idris-lang.org/en/latest/proofs/pluscomm.html#running-example-addition-of-natural-numbers
 /**
@@ -227,6 +241,14 @@ type Plus<X extends Nat, M extends Nat> =
 assert<Equal<Plus<N4, N5>, N9>>();
 assert<Equal<Plus<N1, N3>, N4>>();
 assert<Equal<Plus<N1, N3>, N5>>(); // doesn't typecheck
+
+// total mult : Nat -> Nat -> Nat
+// mult Z right        = Z
+// mult (S left) right = plus right $ mult left right
+type Mult<X extends Nat, M extends Nat> =
+    X extends S<infer K> 
+        ? Plus<M, Mult<K, M>> 
+        : Z;
 
 const z: Z = 0;
 function s<T extends Nat>(n: T): S<T> {
@@ -248,26 +270,3 @@ function plus<X extends Nat, M extends Nat>(x: X, m: M): Plus<X, M> {
 
     return m;
 }
-
-// class Apply s t u | s t -> u
-// instance (Subst s t u, Eval u u') => Apply (Lam s) t u'
-
-// class Eval t u | t -> u
-// instance Eval X X
-// instance Eval (Lam t) (Lam t)
-// instance (Eval s s', Apply s' t u) => Eval (App s t) u
-
-// data X
-// data App t u
-// data Lam t
-type X = 'X'
-type App<T, U> = { t: T, u: U }
-type Lam<T> = { t: T }
-
-// class Subst s t u | s t -> u
-// instance Subst X u u
-// instance (Subst s u s', Subst t u t') => Subst (App s t) u (App s' t')
-// instance Subst (Lam t) u (Lam t)
-type Subst<S, T> =  
-    S extends X ? T :
-    S extends Subst<infer SP, infer TP>

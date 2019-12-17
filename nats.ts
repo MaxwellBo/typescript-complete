@@ -1,17 +1,11 @@
-
-
-
-
-
-interface Iso<T> {
-    [key: T]: T
-}
-
+// interface Iso<T> {
+//     [key: T]: T
+// }
 
 type X<H> = H
 
-function contains<T>(x: T): void {
-}
+// function contains<T>(x: T): void {
+// }
 
 interface NumberIso {
     0: keyof NumberIso,
@@ -39,21 +33,21 @@ interface Incr extends NumberIso {
     9: 9,
 }
 
-type N0<F extends NumberIso, X extends keyof NumberIso> = X
-type N1<F extends NumberIso, X extends keyof NumberIso> = F[X]
-type N2<F extends NumberIso, X extends keyof NumberIso> = F[F[X]]
-type N3<F extends NumberIso, X extends keyof NumberIso> = F[F[F[X]]]
-type N4<F extends NumberIso, X extends keyof NumberIso> = F[F[F[F[X]]]]
+type C0<F extends NumberIso, X extends keyof NumberIso> = X
+type C1<F extends NumberIso, X extends keyof NumberIso> = F[X]
+type C2<F extends NumberIso, X extends keyof NumberIso> = F[F[X]]
+type C3<F extends NumberIso, X extends keyof NumberIso> = F[F[F[X]]]
+type C4<F extends NumberIso, X extends keyof NumberIso> = F[F[F[F[X]]]]
 
-contains<N0<Incr, 0>>(0)
-contains<N1<Incr, 0>>(1)
-contains<N2<Incr, 0>>(2)
-contains<N3<Incr, 0>>(3)
-contains<N3<Incr, 0>>(4) // doesn't typecheck
+contains<C0<Incr, 0>>(0)
+contains<C1<Incr, 0>>(1)
+contains<C2<Incr, 0>>(2)
+contains<C3<Incr, 0>>(3)
+contains<C3<Incr, 0>>(4) // doesn't typecheck
 
 
 // This isn't fucking working
-type S<N extends NumberIso, F extends NumberIso, X extends keyof NumberIso> = F[N[F][X]]
+type SC<N extends NumberIso, F extends NumberIso, X extends keyof NumberIso> = F[N[F][X]]
 
 
 

@@ -14,6 +14,14 @@ contains<'literal'>('literal')
 function assert<T extends true>(): void {
 }
 
+function doesNotTypecheck<T, G>(x: T extends infer U ? U extends G ? never : {} : {}): void {
+}
+
+doesNotTypecheck<{}, number>(343); // doesn't compile
+
+doesNotTypecheck<{}, boolean>(343); // doesn't compile
+doesNotTypecheck<boolean, number>(false); // compiles
+
 assert<true>()
 assert<false>() // won't typecheck
 
@@ -171,20 +179,6 @@ const _zeroString: NumberCodec[0] = 'zero';
 const _zeroNumber: NumberCodec['zero'] = 0
 const _roundtrip:  NumberCodec[NumberCodec['zero']] = 'zero'
 
-
-
-
-interface Decr {
-    5: 4,
-    4: 3,
-    3: 2,
-    2: 1,
-    1: 0
-}
-
-
-
-
 // https://www.typescriptlang.org/docs/handbook/advanced-types.html
 type Unpacked<T> =
     T extends (infer U)[] ? U :
@@ -200,12 +194,11 @@ type T4 = Unpacked<Promise<string>[]>;  // Promise<string>
 type T5 = Unpacked<Unpacked<Promise<string>[]>>;  // string
 
 // https://wiki.haskell.org/Peano_numbers
-type Z = 0
-type S<T extends Nat> = { S: T };
-// aka Succ
+type Z = { kind: 'zero' }
+type S<T extends Nat> = { kind: 'succ', S: T };
 
-type Nat = Z | { S: Nat };
-//             ^ we can't write S<Nat> here because it would be a circulkar reference :(
+type Nat = Z | { kind: 'succ', S: Nat };
+//             ^ we can't write S<Nat> here because it would be a circular reference :(
 
 type N1  = S<Z>;
 type N2  = S<N1>;
@@ -218,14 +211,6 @@ type N8  = S<N7>;
 type N9  = S<N8>;
 type N10 = S<N9>;
 
-interface Incr {
-    0: 1,
-    1: 2,
-    2: 3,
-    3: 4,
-    4: 5
-}
-
 // http://docs.idris-lang.org/en/latest/proofs/pluscomm.html#running-example-addition-of-natural-numbers
 /**
  * plus : Nat -> Nat -> Nat
@@ -234,7 +219,7 @@ interface Incr {
 */
 type Plus<X extends Nat, M extends Nat> =
     X extends S<infer K> 
-        ? { S: Plus<K, M> } // recursive backreference in interface type, to subver the fact we can't do S<Plus<K, M>> 
+        ? { kind: 'succ', S: Plus<K, M> } // recursive backreference in interface type, to subvert the fact we can't do S<Plus<K, M>> 
         : M;
 // For more information about the backreference hack https://github.com/Microsoft/TypeScript/issues/3496#issuecomment-128553540`
 
@@ -246,9 +231,10 @@ assert<Equal<Plus<N1, N3>, N5>>(); // doesn't typecheck
 // mult Z right        = Z
 // mult (S left) right = plus right $ mult left right
 type Mult<X extends Nat, M extends Nat> =
-    X extends S<infer K> 
-        ? Plus<M, Mult<K, M>> 
-        : Z;
+  X extends S<infer K> 
+    ? Plus<M, Mult<K, M>> 
+    : Z;
+
 
 const z: Z = 0;
 function s<T extends Nat>(n: T): S<T> {
